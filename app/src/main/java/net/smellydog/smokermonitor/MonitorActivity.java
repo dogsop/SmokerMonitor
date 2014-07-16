@@ -180,10 +180,20 @@ public class MonitorActivity extends Activity implements ActionBar.TabListener {
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                 Bundle savedInstanceState) {
+
+            Bundle bundle=getArguments();
+
             View rootView = inflater.inflate(R.layout.fragment_monitor, container, false);
 
             sectionLabel = (TextView)rootView.findViewById(R.id.section_label);
-            sectionLabel.setText("Hello");
+
+            int sectionNumber;
+            String sectionLabelText;
+            sectionNumber = bundle.getInt(ARG_SECTION_NUMBER, -1);
+
+            sectionLabelText = String.format("Section %d", sectionNumber);
+            sectionLabel.setText(sectionLabelText);
+
             return rootView;
         }
     }
