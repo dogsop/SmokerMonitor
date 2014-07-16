@@ -4,10 +4,23 @@ import android.app.Activity;
 import android.net.Uri;
 import android.os.Bundle;
 import android.app.Fragment;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+
+import com.parse.FindCallback;
+import com.parse.ParseException;
+import com.parse.ParseObject;
+import com.parse.ParseQuery;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 
 /**
@@ -32,10 +45,14 @@ public class TemperatureFragment extends Fragment {
     private int meatTemperature;
     private int smokerTemperature;
 
-    TextView meatTempView;
-    TextView smokerTempView;
+    private TextView meatTempView;
+    private TextView smokerTempView;
+
+    private Handler mHandler;
 
     private OnFragmentInteractionListener mListener;
+
+    private Timer autoUpdate;
 
     /**
      * Use this factory method to create a new instance of
@@ -54,6 +71,10 @@ public class TemperatureFragment extends Fragment {
     }
     public TemperatureFragment() {
         // Required empty public constructor
+
+        // Defines a Handler object that's attached to the UI thread
+        mHandler = new Handler(Looper.getMainLooper());
+
     }
 
     @Override
@@ -63,8 +84,8 @@ public class TemperatureFragment extends Fragment {
             mParam1 = getArguments().getString(ARG_PARAM1);
             mParam2 = getArguments().getString(ARG_PARAM2);
         }
-        meatTemperature = 46;
-        smokerTemperature = 212;
+        meatTemperature = 0;
+        smokerTemperature = 0;
     }
 
     @Override
@@ -82,11 +103,64 @@ public class TemperatureFragment extends Fragment {
         return v;
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        refreshTemps();
+        autoUpdate = new Timer();
+        autoUpdate.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        refreshTemps();
+                    }
+                });
+            }
+        }, 0, 20000); // updates each 40 secs
+    }
+
+    @Override
+    public void onPause() {
+        autoUpdate.cancel();
+        super.onPause();
+    }
+
     // TODO: Rename method, update argument and hook method into UI event
     public void onButtonPressed(Uri uri) {
         if (mListener != null) {
             mListener.onFragmentInteraction(uri);
         }
+    }
+
+    private void refreshTemps() {
+        ParseQuery<ParseObject> query = ParseQuery.getQuery("RealTimeTempData");
+        query.setLimit(1);
+        query.orderByDescending("createdAt");
+        query.findInBackground(new FindCallback<ParseObject>() {
+            public void done(List<ParseObject> tempDataList, ParseException e) {
+                if (e == null) {
+                    Log.d("score", "Retrieved " + tempDataList.size() + " temp data points");
+                    ParseObject tempData = (ParseObject)tempDataList.get(0);
+                    String objectId = tempData.getObjectId();
+                    Date updatedAt = tempData.getUpdatedAt();
+                    Date createdAt = tempData.getCreatedAt();
+                    meatTemperature = tempData.getInt("Meat_Temp");
+                    smokerTemperature = tempData.getInt("Smoker_Temp");
+                    mHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            // Code here will run in UI thread
+                            meatTempView.setText(Integer.toString(meatTemperature));
+                            smokerTempView.setText(Integer.toString(smokerTemperature));
+                        }
+                    });
+                } else {
+                    Log.d("score", "Error: " + e.getMessage());
+                }
+            }
+        });
     }
 
     @Override
