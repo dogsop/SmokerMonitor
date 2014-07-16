@@ -131,19 +131,20 @@ public class MonitorActivity extends Activity implements ActionBar.TabListener {
         @Override
         public int getCount() {
             // Show 3 total pages.
-            return 3;
+            return 4;
         }
 
         @Override
         public CharSequence getPageTitle(int position) {
-            Locale l = Locale.getDefault();
             switch (position) {
                 case 0:
-                    return getString(R.string.title_section1).toUpperCase(l);
+                    return getString(R.string.title_section1);
                 case 1:
-                    return getString(R.string.title_section2).toUpperCase(l);
+                    return getString(R.string.title_section2);
                 case 2:
-                    return getString(R.string.title_section3).toUpperCase(l);
+                    return getString(R.string.title_section3);
+                case 3:
+                    return getString(R.string.title_section4);
             }
             return null;
         }
@@ -158,6 +159,8 @@ public class MonitorActivity extends Activity implements ActionBar.TabListener {
          * fragment.
          */
         private static final String ARG_SECTION_NUMBER = "section_number";
+
+        TextView sectionLabel;
 
         /**
          * Returns a new instance of this fragment for the given section
@@ -178,6 +181,9 @@ public class MonitorActivity extends Activity implements ActionBar.TabListener {
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                 Bundle savedInstanceState) {
             View rootView = inflater.inflate(R.layout.fragment_monitor, container, false);
+
+            sectionLabel = (TextView)rootView.findViewById(R.id.section_label);
+            sectionLabel.setText("Hello");
             return rootView;
         }
     }
