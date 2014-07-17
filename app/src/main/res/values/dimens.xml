@@ -3,4 +3,5 @@
     <dimen name="activity_horizontal_margin">16dp</dimen>
     <dimen name="activity_vertical_margin">16dp</dimen>
     <dimen name="sm_temp_text_height">85dip</dimen>
+    <dimen name="sm_temp_landscape_text_height">95dip</dimen>
 </resources>

@@ -6,7 +6,7 @@
     tools:context="net.smellydog.smokermonitor.TemperatureFragment">
 
     <LinearLayout
-        android:orientation="vertical"
+        android:orientation="horizontal"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:layout_gravity="center|top">
@@ -27,7 +27,7 @@
             android:layout_gravity="center_horizontal"
             android:paddingTop="30dp"
             android:paddingBottom="30dp"
-            android:textSize="@dimen/sm_temp_text_height" />
+            android:textSize="@dimen/sm_temp_landscape_text_height" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -46,7 +46,7 @@
             android:autoText="false"
             android:paddingTop="30dp"
             android:paddingBottom="30dp"
-            android:textSize="@dimen/sm_temp_text_height" />
+            android:textSize="@dimen/sm_temp_landscape_text_height" />
 
     </LinearLayout>
 
