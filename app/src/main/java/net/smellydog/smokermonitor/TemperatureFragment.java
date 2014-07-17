@@ -44,9 +44,11 @@ public class TemperatureFragment extends Fragment {
 
     private int meatTemperature;
     private int smokerTemperature;
+    private String createdAt;
 
     private TextView meatTempView;
     private TextView smokerTempView;
+    private TextView lastUpdateView;
 
     private Handler mHandler;
 
@@ -86,6 +88,7 @@ public class TemperatureFragment extends Fragment {
         }
         meatTemperature = 0;
         smokerTemperature = 0;
+        createdAt = "";
     }
 
     @Override
@@ -96,15 +99,18 @@ public class TemperatureFragment extends Fragment {
 
         meatTempView = (TextView)v.findViewById(R.id.meatTempView);
         smokerTempView = (TextView)v.findViewById(R.id.smokerTempView);
+        lastUpdateView = (TextView)v.findViewById(R.id.lastUpdateView);
 
         meatTempView.setText(Integer.toString(meatTemperature));
         smokerTempView.setText(Integer.toString(smokerTemperature));
+        lastUpdateView.setText(createdAt);
 
         return v;
     }
 
     @Override
     public void onResume() {
+        Log.i("TemperatureFragment", "onResume()");
         super.onResume();
         refreshTemps();
         autoUpdate = new Timer();
@@ -118,11 +124,12 @@ public class TemperatureFragment extends Fragment {
                     }
                 });
             }
-        }, 0, 20000); // updates each 40 secs
+        }, 10000, 20000); // updates each 40 secs
     }
 
     @Override
     public void onPause() {
+        Log.i("TemperatureFragment", "onPause()");
         autoUpdate.cancel();
         super.onPause();
     }
@@ -135,32 +142,34 @@ public class TemperatureFragment extends Fragment {
     }
 
     private void refreshTemps() {
-        ParseQuery<ParseObject> query = ParseQuery.getQuery("RealTimeTempData");
-        query.setLimit(1);
-        query.orderByDescending("createdAt");
-        query.findInBackground(new FindCallback<ParseObject>() {
-            public void done(List<ParseObject> tempDataList, ParseException e) {
-                if (e == null) {
-                    Log.d("score", "Retrieved " + tempDataList.size() + " temp data points");
-                    ParseObject tempData = (ParseObject)tempDataList.get(0);
-                    String objectId = tempData.getObjectId();
-                    Date updatedAt = tempData.getUpdatedAt();
-                    Date createdAt = tempData.getCreatedAt();
-                    meatTemperature = tempData.getInt("Meat_Temp");
-                    smokerTemperature = tempData.getInt("Smoker_Temp");
-                    mHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            // Code here will run in UI thread
-                            meatTempView.setText(Integer.toString(meatTemperature));
-                            smokerTempView.setText(Integer.toString(smokerTemperature));
-                        }
-                    });
-                } else {
-                    Log.d("score", "Error: " + e.getMessage());
+        Log.i("TemperatureFragment", "refreshTemps()");
+        try {
+            List<ParseObject> tempDataList;
+            ParseQuery<ParseObject> query = ParseQuery.getQuery("RealTimeTempData");
+            query.setLimit(1);
+            query.orderByDescending("createdAt");
+            Log.i("TemperatureFragment", "tempDataList = query.find()");
+            tempDataList = query.find();
+            Log.i("TemperatureFragment", "Retrieved " + tempDataList.size() + " temp data points");
+            ParseObject tempData = (ParseObject)tempDataList.get(0);
+            //String objectId = tempData.getObjectId();
+            //Date updatedAt = tempData.getUpdatedAt();
+            createdAt = tempData.getCreatedAt().toString();
+            meatTemperature = tempData.getInt("Meat_Temp");
+            smokerTemperature = tempData.getInt("Smoker_Temp");
+            mHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    Log.i("TemperatureFragment", "refreshTemps().run()");
+                    // Code here will run in UI thread
+                    meatTempView.setText(Integer.toString(meatTemperature));
+                    smokerTempView.setText(Integer.toString(smokerTemperature));
+                    lastUpdateView.setText(createdAt);
                 }
-            }
-        });
+            });
+        } catch (ParseException e) {
+            Log.i("TemperatureFragment", "Error: " + e.toString());
+        }
     }
 
     @Override
