@@ -13,10 +13,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.parse.FindCallback;
+import com.parse.GetCallback;
 import com.parse.ParseException;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
 
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Timer;
@@ -119,19 +122,13 @@ public class TemperatureFragment extends Fragment {
     public void onResume() {
         Log.i("TemperatureFragment", "onResume()");
         super.onResume();
-        refreshTemps();
+        //refreshTemps();
         autoUpdate = new Timer();
         autoUpdate.schedule(new TimerTask() {
-            @Override
             public void run() {
-                mHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        refreshTemps();
-                    }
-                });
+                refreshTemps();
             }
-        }, 10000, 20000); // updates each 40 secs
+        }, 1000, 12*1000); // updates each 40 secs
     }
 
     @Override
@@ -149,44 +146,93 @@ public class TemperatureFragment extends Fragment {
     }
 
     private void refreshTemps() {
-        Log.i("TemperatureFragment", "refreshTemps()");
         final Date currentDateTime = new Date();
         lastPollingAttemptString = currentDateTime.toString();
-        try {
-            List<ParseObject> tempDataList;
-            ParseQuery<ParseObject> query = ParseQuery.getQuery("RealTimeTempData");
-            query.setLimit(1);
-            query.orderByDescending("createdAtString");
-            Log.i("TemperatureFragment", "tempDataList = query.find()");
-            tempDataList = query.find();
-            Log.i("TemperatureFragment", "Retrieved " + tempDataList.size() + " temp data points");
-            ParseObject tempData = (ParseObject)tempDataList.get(0);
-            //String objectId = tempData.getObjectId();
-            //Date updatedAt = tempData.getUpdatedAt();
-            createdAt = tempData.getCreatedAt();
-            createdAtString = createdAt.toString();
-            meatTemperature = tempData.getInt("Meat_Temp");
-            smokerTemperature = tempData.getInt("Smoker_Temp");
-            mHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    Log.i("TemperatureFragment", "refreshTemps().run()");
-                    // Code here will run in UI thread
-                    meatTempView.setText(Integer.toString(meatTemperature)+ " \u2109");
-                    smokerTempView.setText(Integer.toString(smokerTemperature)+ " \u2109");
+        Log.i("TemperatureFragment", "refreshTemps() " + lastPollingAttemptString);
+        List<ParseObject> tempDataList;
+        ParseQuery<ParseObject> query = ParseQuery.getQuery("RealTimeTempData");
+        query.setLimit(1);
+        query.orderByDescending("createdAt");
+        query.setCachePolicy(ParseQuery.CachePolicy.IGNORE_CACHE);
+        //query.orderByAscending("createdAtString");
+        Log.i("TemperatureFragment", "tempData = query.getFirstInBackground()");
+//        query.findInBackground(new FindCallback<ParseObject>() {
+//            public void done(List<ParseObject> tempDataList, ParseException e) {
+//                if (e == null) {
+//                    Log.i("TemperatureFragment", "Retrieved " + tempDataList.size() + " temp data points");
+//                    ParseObject tempData = (ParseObject)tempDataList.get(0);
+//                    //String objectId = tempData.getObjectId();
+//                    //Date updatedAt = tempData.getUpdatedAt();
+//                    createdAt = tempData.getCreatedAt();
+//                    createdAtString = createdAt.toString();
+//                    meatTemperature = tempData.getInt("MeatTemp");
+//                    smokerTemperature = tempData.getInt("SmokerTemp");
+//                    mHandler.post(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            Log.i("TemperatureFragment", "refreshTemps().findInBackground.run()");
+//
+//                            // Code here will run in UI thread
+//                            meatTempView.setText(Integer.toString(meatTemperature)+ " \u2109");
+//                            smokerTempView.setText(Integer.toString(smokerTemperature)+ " \u2109");
+//                        }
+//                    });
+//                } else {
+//                    Log.d("score", "Error: " + e.getMessage());
+//                }
+//            }
+//        });
+
+
+        query.getFirstInBackground(new GetCallback<ParseObject>() {
+            public void done(ParseObject object, ParseException e) {
+                if (object == null) {
+                    Log.i("TemperatureFragment", "The getFirst request failed.");
+                } else {
+                    Log.i("TemperatureFragment", "Retrieved the object.");
+                    String objectId = object.getObjectId();
+                    createdAt = object.getCreatedAt();
+                    createdAtString = createdAt.toString();
+                    Log.i("TemperatureFragment", "ObjectId - " + objectId + " createdAt - " + createdAtString);
+                    meatTemperature = object.getInt("MeatTemp");
+                    smokerTemperature = object.getInt("SmokerTemp");
+                    mHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            Log.i("TemperatureFragment", "refreshTemps().findInBackground.run()");
+
+                            // Code here will run in UI thread
+                            meatTempView.setText(Integer.toString(meatTemperature)+ " \u2109");
+                            smokerTempView.setText(Integer.toString(smokerTemperature)+ " \u2109");
+                            timestampView.setText(createdAtString);
+                        }
+                    });
                 }
-            });
-        } catch (ParseException e) {
-            Log.i("TemperatureFragment", "Error: " + e.toString());
-        }
-        mHandler.post(new Runnable() {
+            }
+        });
+
+
+        mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
                 Log.i("TemperatureFragment", "refreshTemps().lastUpdateView.run()");
+
+                // Code here will run in UI thread
+                meatTempView.setText(Integer.toString(meatTemperature) + " \u2109");
+                smokerTempView.setText(Integer.toString(smokerTemperature) + " \u2109");
+
+                Calendar c = Calendar.getInstance();
+                int zoneOffset = c.get(java.util.Calendar.ZONE_OFFSET);
+                int dstOffset = c.get(java.util.Calendar.DST_OFFSET);
+                long createdTime = createdAt.getTime();
+                createdTime += (zoneOffset + dstOffset);
+                long currentTime = currentDateTime.getTime();
+
                 // Code here will run in UI thread
                 long diff = currentDateTime.getTime() - createdAt.getTime();
-                if( diff > 30) {
-                    if(diff > 120) {
+
+                if (diff > 30000) {
+                    if (diff > 120000) {
                         meatTempView.setTextColor(Color.RED);
                         smokerTempView.setTextColor(Color.RED);
                     } else {
@@ -197,10 +243,9 @@ public class TemperatureFragment extends Fragment {
                     meatTempView.setTextColor(Color.BLACK);
                     smokerTempView.setTextColor(Color.BLACK);
                 }
-                timestampView.setText(createdAtString);
                 lastUpdateView.setText(lastPollingAttemptString);
             }
-        });
+        }, 2000);
     }
 
     @Override
