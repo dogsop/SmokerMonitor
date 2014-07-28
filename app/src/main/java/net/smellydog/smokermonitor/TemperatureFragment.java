@@ -156,11 +156,9 @@ public class TemperatureFragment extends Fragment {
         final Date currentDateTime = new Date();
         lastPollingAttemptString = currentDateTime.toString();
         Log.i("TemperatureFragment", "refreshTemps() " + lastPollingAttemptString);
-        List<ParseObject> tempDataList;
+
         ParseQuery<ParseObject> query = ParseQuery.getQuery("RealTimeTempData");
-        query.setLimit(1);
         query.orderByDescending("createdAt");
-        query.setCachePolicy(ParseQuery.CachePolicy.IGNORE_CACHE);
         //query.orderByAscending("createdAtString");
         Log.i("TemperatureFragment", "tempData = query.getFirstInBackground()");
         queryOutstanding = true;

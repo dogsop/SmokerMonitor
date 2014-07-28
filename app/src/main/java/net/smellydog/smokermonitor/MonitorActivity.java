@@ -21,7 +21,9 @@ import android.widget.TextView;
 
 
 public class MonitorActivity extends Activity
-        implements ActionBar.TabListener, TemperatureFragment.OnFragmentInteractionListener {
+        implements ActionBar.TabListener,
+        TemperatureFragment.OnFragmentInteractionListener,
+        SetPointFragment.OnFragmentInteractionListener {
 
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide
@@ -135,6 +137,8 @@ public class MonitorActivity extends Activity
             switch(position) {
                 case 0:
                     return TemperatureFragment.newInstance();
+                case 2:
+                    return SetPointFragment.newInstance();
                 default:
                     return PlaceholderFragment.newInstance(position + 1);
             }
