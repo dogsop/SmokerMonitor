@@ -62,6 +62,8 @@ public class TemperatureFragment extends Fragment {
 
     private Timer autoUpdate;
 
+    private boolean queryOutstanding;
+
     /**
      * Use this factory method to create a new instance of
      * this fragment using the provided parameters.
@@ -82,7 +84,7 @@ public class TemperatureFragment extends Fragment {
 
         // Defines a Handler object that's attached to the UI thread
         mHandler = new Handler(Looper.getMainLooper());
-
+        queryOutstanding = false;
     }
 
     @Override
@@ -126,9 +128,14 @@ public class TemperatureFragment extends Fragment {
         autoUpdate = new Timer();
         autoUpdate.schedule(new TimerTask() {
             public void run() {
-                refreshTemps();
+                if(queryOutstanding == false) {
+                    Log.i("TemperatureFragment", "autoUpdate - calling refreshTemps()");
+                    refreshTemps();
+                } else {
+                    Log.e("TemperatureFragment", "autoUpdate - unable to call refreshTemps(), query pending");
+                }
             }
-        }, 1000, 12*1000); // updates each 40 secs
+        }, 200, 20*1000); // updates each 40 secs
     }
 
     @Override
@@ -156,36 +163,10 @@ public class TemperatureFragment extends Fragment {
         query.setCachePolicy(ParseQuery.CachePolicy.IGNORE_CACHE);
         //query.orderByAscending("createdAtString");
         Log.i("TemperatureFragment", "tempData = query.getFirstInBackground()");
-//        query.findInBackground(new FindCallback<ParseObject>() {
-//            public void done(List<ParseObject> tempDataList, ParseException e) {
-//                if (e == null) {
-//                    Log.i("TemperatureFragment", "Retrieved " + tempDataList.size() + " temp data points");
-//                    ParseObject tempData = (ParseObject)tempDataList.get(0);
-//                    //String objectId = tempData.getObjectId();
-//                    //Date updatedAt = tempData.getUpdatedAt();
-//                    createdAt = tempData.getCreatedAt();
-//                    createdAtString = createdAt.toString();
-//                    meatTemperature = tempData.getInt("MeatTemp");
-//                    smokerTemperature = tempData.getInt("SmokerTemp");
-//                    mHandler.post(new Runnable() {
-//                        @Override
-//                        public void run() {
-//                            Log.i("TemperatureFragment", "refreshTemps().findInBackground.run()");
-//
-//                            // Code here will run in UI thread
-//                            meatTempView.setText(Integer.toString(meatTemperature)+ " \u2109");
-//                            smokerTempView.setText(Integer.toString(smokerTemperature)+ " \u2109");
-//                        }
-//                    });
-//                } else {
-//                    Log.d("score", "Error: " + e.getMessage());
-//                }
-//            }
-//        });
-
-
+        queryOutstanding = true;
         query.getFirstInBackground(new GetCallback<ParseObject>() {
             public void done(ParseObject object, ParseException e) {
+                queryOutstanding = false;
                 if (object == null) {
                     Log.i("TemperatureFragment", "The getFirst request failed.");
                 } else {
