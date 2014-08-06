@@ -13,7 +13,6 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.ToggleButton;
 
 import com.parse.GetCallback;
 import com.parse.ParseException;
@@ -28,13 +27,13 @@ import java.util.TimerTask;
 /**
  * A simple {@link Fragment} subclass.
  * Activities that contain this fragment must implement the
- * {@link SetPointFragment.OnFragmentInteractionListener} interface
+ * {@link PidSettingsFragment.OnFragmentInteractionListener} interface
  * to handle interaction events.
- * Use the {@link SetPointFragment#newInstance} factory method to
+ * Use the {@link PidSettingsFragment#newInstance} factory method to
  * create an instance of this fragment.
  *
  */
-public class SetPointFragment extends Fragment {
+public class PidSettingsFragment extends Fragment {
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
@@ -44,24 +43,32 @@ public class SetPointFragment extends Fragment {
     private String mParam1;
     private String mParam2;
 
-    private int setPointTemperature;
-    private Boolean controllerRunning;
-    private TextView setPointTempView;
-    private EditText setPointEditText;
-    private ToggleButton toggleControllerButton;
-    private Button editSetPointButton;
+
+    private TextView settingKpView;
+    private TextView settingKiView;
+    private TextView settingKdView;
+
+    private EditText settingKpEditText;
+    private EditText settingKiEditText;
+    private EditText settingKdEditText;
+
+    private Button editPidSettingsButton;
+
+    private String objectId;
 
     private String lastPollingAttemptString;
     private String updatedAtString;
+
+    private double Kp;
+    private double Ki;
+    private double Kd;
 
     private Handler mHandler;
 
     private Timer autoUpdateTimer;
 
     private boolean queryOutstanding;
-    private boolean setPointEditEnabled;
-
-    private String objectId;
+    private boolean setPidSettingsEnabled;
 
     private OnFragmentInteractionListener mListener;
 
@@ -69,23 +76,20 @@ public class SetPointFragment extends Fragment {
      * Use this factory method to create a new instance of
      * this fragment using the provided parameters.
      *
-     * @return A new instance of fragment SetPointFragment.
+     * @return A new instance of fragment PidSettingsFragment.
      */
     // TODO: Rename and change types and number of parameters
-    public static SetPointFragment newInstance() {
-        SetPointFragment fragment = new SetPointFragment();
+    public static PidSettingsFragment newInstance() {
+        PidSettingsFragment fragment = new PidSettingsFragment();
         return fragment;
     }
-    public SetPointFragment() {
-        // Required empty public constructor
+    public PidSettingsFragment() {
         // Defines a Handler object that's attached to the UI thread
         mHandler = new Handler(Looper.getMainLooper());
 
-        setPointTemperature = 0;
-        controllerRunning = false;
         objectId = null;
         queryOutstanding = false;
-        setPointEditEnabled = false;
+        setPidSettingsEnabled = false;
     }
 
     @Override
@@ -100,47 +104,71 @@ public class SetPointFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+
         // Inflate the layout for this fragment
-        View v = inflater.inflate(R.layout.fragment_set_point, container, false);
+        View v = inflater.inflate(R.layout.fragment_pid_settings, container, false);
 
-        setPointTempView = (TextView)v.findViewById(R.id.setPointTempView);
-        setPointEditText = (EditText)v.findViewById(R.id.setPointEditText);
+        settingKpView = (TextView)v.findViewById(R.id.settingKpView);
+        settingKiView = (TextView)v.findViewById(R.id.settingKiView);
+        settingKdView = (TextView)v.findViewById(R.id.settingKdView);
 
-        setPointTempView.setVisibility(View.VISIBLE);
-        setPointEditText.setVisibility(View.GONE);
+        settingKpEditText = (EditText)v.findViewById(R.id.settingKpEditText);
+        settingKiEditText = (EditText)v.findViewById(R.id.settingKiEditText);
+        settingKdEditText = (EditText)v.findViewById(R.id.settingKdEditText);
 
-        editSetPointButton = (Button)v.findViewById(R.id.editSetPointButton);
-        editSetPointButton.setEnabled(false);
-        editSetPointButton.setOnClickListener(new View.OnClickListener() {
+        settingKpView.setVisibility(View.VISIBLE);
+        settingKpEditText.setVisibility(View.GONE);
+        settingKiView.setVisibility(View.VISIBLE);
+        settingKiEditText.setVisibility(View.GONE);
+        settingKdView.setVisibility(View.VISIBLE);
+        settingKdEditText.setVisibility(View.GONE);
+
+        editPidSettingsButton = (Button)v.findViewById(R.id.editPidSettingsButton);
+        editPidSettingsButton.setEnabled(false);
+        editPidSettingsButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                if(setPointEditEnabled == false) {
-                    toggleControllerButton.setEnabled(false);
-                    setPointEditEnabled = true;
-                    editSetPointButton.setText("Save Set Point");
-                    setPointTempView.setVisibility(View.GONE);
-                    setPointEditText.setVisibility(View.VISIBLE);
-                    setPointEditText.setText(Integer.toString(setPointTemperature));
+                if (setPidSettingsEnabled == false) {
+                    setPidSettingsEnabled = true;
+                    editPidSettingsButton.setText("Save PID Settings");
+                    settingKpView.setVisibility(View.GONE);
+                    settingKpEditText.setVisibility(View.VISIBLE);
+                    settingKiView.setVisibility(View.GONE);
+                    settingKiEditText.setVisibility(View.VISIBLE);
+                    settingKdView.setVisibility(View.GONE);
+                    settingKdEditText.setVisibility(View.VISIBLE);
+                    settingKpEditText.setText(Double.toString(Kp));
+                    settingKiEditText.setText(Double.toString(Ki));
+                    settingKdEditText.setText(Double.toString(Kd));
                 } else {
-                    if(queryOutstanding == false) {
-                        toggleControllerButton.setEnabled(true);
-                        setPointEditEnabled = false;
-                        editSetPointButton.setText("Edit Set Point");
-                        setPointTempView.setVisibility(View.VISIBLE);
-                        setPointEditText.setVisibility(View.GONE);
-                        setPointTemperature = Integer.parseInt(setPointEditText.getText().toString());
-                        setPointTempView.setText(Integer.toString(setPointTemperature) + " \u2109");
-                        if(objectId != null) {
-                            ParseQuery<ParseObject> query = ParseQuery.getQuery("SetPointSettings");
+                    if (queryOutstanding == false) {
+                        setPidSettingsEnabled = false;
+                        editPidSettingsButton.setText("Edit PID Settings");
+                        settingKpView.setVisibility(View.VISIBLE);
+                        settingKpEditText.setVisibility(View.GONE);
+                        settingKiView.setVisibility(View.VISIBLE);
+                        settingKiEditText.setVisibility(View.GONE);
+                        settingKdView.setVisibility(View.VISIBLE);
+                        settingKdEditText.setVisibility(View.GONE);
+                        Kp = Double.parseDouble(settingKpEditText.getText().toString());
+                        Ki = Double.parseDouble(settingKiEditText.getText().toString());
+                        Kd = Double.parseDouble(settingKdEditText.getText().toString());
+                        settingKpView.setText(Double.toString(Kp));
+                        settingKiView.setText(Double.toString(Ki));
+                        settingKdView.setText(Double.toString(Kd));
+                        if (objectId != null) {
+                            ParseQuery<ParseObject> query = ParseQuery.getQuery("PidSettings");
                             // Retrieve the object by id
                             queryOutstanding = true;
                             query.getInBackground(objectId, new GetCallback<ParseObject>() {
-                                public void done(ParseObject setPointSettings, ParseException e) {
+                                public void done(ParseObject pidSettings, ParseException e) {
                                     queryOutstanding = false;
                                     if (e == null) {
                                         // Now let's update it with some new data. In this case, only controllerRunning
                                         // will get sent to the Parse Cloud.
-                                        setPointSettings.put("SetPointTemp", setPointTemperature);
-                                        setPointSettings.saveInBackground();
+                                        pidSettings.put("Kp", Kp);
+                                        pidSettings.put("Ki", Ki);
+                                        pidSettings.put("Kd", Kd);
+                                        pidSettings.saveInBackground();
                                     }
                                 }
                             });
@@ -150,37 +178,8 @@ public class SetPointFragment extends Fragment {
             }
         });
 
-        toggleControllerButton = (ToggleButton)v.findViewById(R.id.toggleControllerButton);
-        toggleControllerButton.setEnabled(false);
-        toggleControllerButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                if(queryOutstanding == false) {
-                    controllerRunning = toggleControllerButton.isChecked();
-                    if(objectId != null) {
-                        ParseQuery<ParseObject> query = ParseQuery.getQuery("SetPointSettings");
-                        // Retrieve the object by id
-                        queryOutstanding = true;
-                        query.getInBackground(objectId, new GetCallback<ParseObject>() {
-                            public void done(ParseObject setPointSettings, ParseException e) {
-                                queryOutstanding = false;
-                                if (e == null) {
-                                    // Now let's update it with some new data. In this case, only controllerRunning
-                                    // will get sent to the Parse Cloud.
-                                    setPointSettings.put("ControllerRunning", controllerRunning);
-                                    setPointSettings.saveInBackground();
-                                }
-                            }
-                        });
-                    }
-                } else {
-                    toggleControllerButton.setChecked(controllerRunning);
-                }
-            }
-        });
-
 
         return v;
-
     }
 
     @Override
@@ -191,13 +190,17 @@ public class SetPointFragment extends Fragment {
         if(objectId == null) {
             getObjectId();
         } else {
-            setPointTempView.setText(Integer.toString(setPointTemperature) + " \u2109");
-            editSetPointButton.setEnabled(true);
-            toggleControllerButton.setEnabled(true);
-            toggleControllerButton.setChecked(controllerRunning);
-            setPointEditEnabled = false;
-            setPointTempView.setVisibility(View.VISIBLE);
-            setPointEditText.setVisibility(View.GONE);
+            settingKpView.setText(Double.toString(Kp));
+            settingKiView.setText(Double.toString(Ki));
+            settingKdView.setText(Double.toString(Kd));
+            editPidSettingsButton.setEnabled(true);
+            setPidSettingsEnabled = false;
+            settingKpView.setVisibility(View.VISIBLE);
+            settingKpEditText.setVisibility(View.GONE);
+            settingKiView.setVisibility(View.VISIBLE);
+            settingKiEditText.setVisibility(View.GONE);
+            settingKdView.setVisibility(View.VISIBLE);
+            settingKdEditText.setVisibility(View.GONE);
         }
 
         autoUpdateTimer = new Timer();
@@ -210,7 +213,7 @@ public class SetPointFragment extends Fragment {
                     Log.e("SetPointFragment", "autoUpdate - unable to call refreshScreen(), query pending");
                 }
             }
-        }, 10000, 60 * 1000); // updates each 60 secs
+        }, 10000, 240 * 1000); // updates each 240 secs
     }
 
     @Override
@@ -226,7 +229,7 @@ public class SetPointFragment extends Fragment {
         Log.i("SetPointFragment", "refreshScreen() " + lastPollingAttemptString);
 
         if(objectId == null) {
-            ParseQuery<ParseObject> query = ParseQuery.getQuery("SetPointSettings");
+            ParseQuery<ParseObject> query = ParseQuery.getQuery("PidSettings");
             query.orderByDescending("createdAt");
             //query.orderByAscending("createdAtString");
             Log.i("SetPointFragment", "tempData = query.getFirstInBackground()");
@@ -241,18 +244,19 @@ public class SetPointFragment extends Fragment {
                         objectId = object.getObjectId();
                         Log.i("SetPointFragment", "ObjectId - " + objectId);
                         updatedAtString = object.getUpdatedAt().toString();
-                        setPointTemperature = object.getInt("SetPointTemp");
-                        controllerRunning = object.getBoolean("ControllerRunning");
+                        Kp = object.getDouble("Kp");
+                        Ki = object.getDouble("Ki");
+                        Kd = object.getDouble("Kd");
                         mHandler.post(new Runnable() {
                             @Override
                             public void run() {
                                 Log.i("SetPointFragment", "refreshScreen().findInBackground.run()");
 
                                 // Code here will run in UI thread
-                                setPointTempView.setText(Integer.toString(setPointTemperature) + " \u2109");
-                                editSetPointButton.setEnabled(true);
-                                toggleControllerButton.setEnabled(true);
-                                toggleControllerButton.setChecked(controllerRunning);
+                                settingKpView.setText(Double.toString(Kp));
+                                settingKiView.setText(Double.toString(Ki));
+                                settingKdView.setText(Double.toString(Kd));
+                                editPidSettingsButton.setEnabled(true);
                                 //timestampView.setText(createdAtString);
                             }
                         });
@@ -268,23 +272,26 @@ public class SetPointFragment extends Fragment {
         Log.i("SetPointFragment", "refreshScreen() " + lastPollingAttemptString);
 
         if(objectId != null) {
-            ParseQuery<ParseObject> query = ParseQuery.getQuery("SetPointSettings");
+            ParseQuery<ParseObject> query = ParseQuery.getQuery("PidSettings");
             queryOutstanding = true;
             query.getInBackground(objectId, new GetCallback<ParseObject>() {
                 public void done(ParseObject object, ParseException e) {
                     queryOutstanding = false;
                     if (e == null) {
                         updatedAtString = object.getUpdatedAt().toString();
-                        setPointTemperature = object.getInt("SetPointTemp");
-                        controllerRunning = object.getBoolean("ControllerRunning");
+                        Kp = object.getDouble("Kp");
+                        Ki = object.getDouble("Ki");
+                        Kd = object.getDouble("Kd");
                         mHandler.post(new Runnable() {
                             @Override
                             public void run() {
                                 Log.i("SetPointFragment", "refreshScreen().findInBackground.run()");
 
                                 // Code here will run in UI thread
-                                setPointTempView.setText(Integer.toString(setPointTemperature)+ " \u2109");
-                                toggleControllerButton.setChecked(controllerRunning);
+                                settingKpView.setText(Double.toString(Kp));
+                                settingKiView.setText(Double.toString(Ki));
+                                settingKdView.setText(Double.toString(Kd));
+                                editPidSettingsButton.setEnabled(true);
                             }
                         });
                     } else {
@@ -298,7 +305,7 @@ public class SetPointFragment extends Fragment {
 
 
     // TODO: Rename method, update argument and hook method into UI event
-    public void onControllerButtonPressed(Uri uri) {
+    public void onButtonPressed(Uri uri) {
         if (mListener != null) {
             mListener.onFragmentInteraction(uri);
         }

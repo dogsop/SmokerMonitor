@@ -1,17 +1,14 @@
 package net.smellydog.smokermonitor;
 
-import java.util.Locale;
-
-import android.app.Activity;
 import android.app.ActionBar;
+import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.net.Uri;
-import android.support.v13.app.FragmentPagerAdapter;
 import android.os.Bundle;
+import android.support.v13.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -21,9 +18,10 @@ import android.widget.TextView;
 
 
 public class MonitorActivity extends Activity
-        implements ActionBar.TabListener,
+implements ActionBar.TabListener,
         TemperatureFragment.OnFragmentInteractionListener,
-        SetPointFragment.OnFragmentInteractionListener {
+        SetPointFragment.OnFragmentInteractionListener,
+        PidSettingsFragment.OnFragmentInteractionListener {
 
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide
@@ -139,6 +137,8 @@ public class MonitorActivity extends Activity
                     return TemperatureFragment.newInstance();
                 case 2:
                     return SetPointFragment.newInstance();
+                case 3:
+                    return PidSettingsFragment.newInstance();
                 default:
                     return PlaceholderFragment.newInstance(position + 1);
             }

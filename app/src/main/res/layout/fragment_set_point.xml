@@ -2,19 +2,16 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:paddingTop="10dp"
     tools:context="net.smellydog.smokermonitor.SetPointFragment">
-
-    <!-- TODO: Update blank fragment layout -->
-    TextView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="@string/hello_blank_fragment" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceMedium"
         android:text="Set Point:"
+        android:paddingLeft="5dp"
+        android:paddingBottom="20dp"
         android:id="@+id/textView"
         android:layout_gravity="left|top" />
 
@@ -26,6 +23,22 @@
         android:id="@+id/setPointTempView"
         android:layout_gravity="center"
         android:textIsSelectable="false"
+        android:paddingLeft="30dp"
+        android:paddingTop="30dp"
+        android:paddingBottom="30dp"
+        android:textSize="@dimen/sm_temp_text_height" />
+
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="0"
+        android:inputType="number"
+        android:ems="10"
+        android:id="@+id/setPointEditText"
+        android:layout_gravity="center"
+        android:paddingLeft="30dp"
         android:paddingTop="30dp"
         android:paddingBottom="30dp"
         android:textSize="@dimen/sm_temp_text_height" />
@@ -35,6 +48,7 @@
         android:orientation="vertical"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:paddingLeft="5dp"
         android:layout_gravity="left|bottom">
         <TextView
             android:layout_width="wrap_content"
@@ -56,6 +70,7 @@
         android:orientation="vertical"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:paddingRight="5dp"
         android:layout_gravity="right|bottom">
         <Button
             android:layout_width="wrap_content"

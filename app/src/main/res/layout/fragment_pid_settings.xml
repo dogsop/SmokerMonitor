@@ -1,0 +1,152 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="net.smellydog.smokermonitor.PidSettingsFragment">
+
+    <ScrollView
+        android:id="@+id/scrollView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top"
+            android:paddingTop="10dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/textView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="left|top"
+                android:text="PID Settings:"
+                android:paddingLeft="5dp"
+                android:paddingBottom="20dp"
+                android:textAppearance="?android:attr/textAppearanceMedium" />
+
+            <TextView
+                android:id="@+id/textView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="left"
+                android:paddingLeft="20dp"
+                android:text="Kp:"
+                android:textAppearance="?android:attr/textAppearanceSmall" />
+
+            <TextView
+                android:id="@+id/settingKpView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingLeft="30dp"
+                android:paddingBottom="30dp"
+                android:paddingTop="30dp"
+                android:text="0"
+                android:textAppearance="?android:attr/textAppearanceLarge"
+                android:textIsSelectable="false"
+                android:textSize="@dimen/sm_pid_setting_text_height" />
+
+            <EditText
+                android:id="@+id/settingKpEditText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ems="10"
+                android:inputType="numberDecimal"
+                android:paddingLeft="30dp"
+                android:paddingBottom="30dp"
+                android:paddingTop="30dp"
+                android:text="0"
+                android:textAppearance="?android:attr/textAppearanceLarge"
+                android:textSize="@dimen/sm_pid_setting_text_height" />
+
+            <TextView
+                android:id="@+id/textView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="left"
+                android:paddingLeft="20dp"
+                android:text="Ki:"
+                android:textAppearance="?android:attr/textAppearanceSmall" />
+
+            <TextView
+                android:id="@+id/settingKiView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingBottom="30dp"
+                android:paddingLeft="30dp"
+                android:paddingTop="30dp"
+                android:text="0"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:textIsSelectable="false"
+                android:textSize="@dimen/sm_pid_setting_text_height" />
+
+            <EditText
+                android:id="@+id/settingKiEditText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ems="10"
+                android:inputType="numberDecimal"
+                android:paddingLeft="30dp"
+                android:paddingBottom="30dp"
+                android:paddingTop="30dp"
+                android:text="0"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:textSize="@dimen/sm_pid_setting_text_height" />
+
+            <TextView
+                android:id="@+id/textView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingLeft="20dp"
+                android:layout_gravity="left"
+                android:text="Kd:"
+                android:textAppearance="?android:attr/textAppearanceSmall" />
+
+            <TextView
+                android:id="@+id/settingKdView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingBottom="30dp"
+                android:paddingLeft="30dp"
+                android:paddingTop="30dp"
+                android:text="0"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:textIsSelectable="false"
+                android:textSize="@dimen/sm_pid_setting_text_height" />
+
+            <EditText
+                android:id="@+id/settingKdEditText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ems="10"
+                android:inputType="numberDecimal"
+                android:paddingLeft="30dp"
+                android:paddingBottom="30dp"
+                android:paddingTop="30dp"
+                android:text="0"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:textSize="@dimen/sm_pid_setting_text_height" />
+
+        </LinearLayout>
+
+    </ScrollView>
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/editPidSettingsButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="Edit PID Settings" />
+
+    </LinearLayout>
+
+
+</FrameLayout>

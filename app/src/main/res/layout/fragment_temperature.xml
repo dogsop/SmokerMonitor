@@ -9,6 +9,7 @@
         android:orientation="vertical"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
+        android:paddingTop="10dp"
         android:layout_gravity="center|top">
 
         <TextView
@@ -16,6 +17,7 @@
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceMedium"
             android:text="Meat Temp:"
+            android:paddingLeft="5dp"
             android:id="@+id/textView" />
 
         <TextView
@@ -34,6 +36,7 @@
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceMedium"
             android:text="Smoker Temp:"
+            android:paddingLeft="5dp"
             android:id="@+id/textView2" />
 
         <TextView
@@ -65,6 +68,7 @@
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceSmall"
                 android:text="Last Update Request:   "
+                android:paddingLeft="5dp"
                 android:id="@+id/lastupdateLabel"
                 android:layout_gravity="left|top" />
 
@@ -85,6 +89,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceSmall"
+                android:paddingLeft="5dp"
                 android:text="Last Grill Update:   "
                 android:id="@+id/timestampLabel"
                 android:layout_gravity="bottom|left" />
