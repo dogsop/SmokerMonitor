@@ -68,6 +68,8 @@ public class PidSettingsFragment extends Fragment {
     private Timer autoUpdateTimer;
 
     private boolean queryOutstanding;
+    ParseQuery<ParseObject> pidQuery;
+
     private boolean setPidSettingsEnabled;
 
     private OnFragmentInteractionListener mListener;
@@ -156,10 +158,11 @@ public class PidSettingsFragment extends Fragment {
                         settingKiView.setText(Double.toString(Ki));
                         settingKdView.setText(Double.toString(Kd));
                         if (objectId != null) {
-                            ParseQuery<ParseObject> query = ParseQuery.getQuery("PidSettings");
+                            pidQuery = ParseQuery.getQuery("PidSettings");
+                            pidQuery.setCachePolicy(ParseQuery.CachePolicy.NETWORK_ONLY);
                             // Retrieve the object by id
                             queryOutstanding = true;
-                            query.getInBackground(objectId, new GetCallback<ParseObject>() {
+                            pidQuery.getInBackground(objectId, new GetCallback<ParseObject>() {
                                 public void done(ParseObject pidSettings, ParseException e) {
                                     queryOutstanding = false;
                                     if (e == null) {
@@ -220,6 +223,10 @@ public class PidSettingsFragment extends Fragment {
     public void onPause() {
         Log.i("SetPointFragment", "onPause()");
         autoUpdateTimer.cancel();
+        if(queryOutstanding == true) {
+            pidQuery.cancel();
+            queryOutstanding = false;
+        }
         super.onPause();
     }
 
@@ -229,12 +236,13 @@ public class PidSettingsFragment extends Fragment {
         Log.i("SetPointFragment", "refreshScreen() " + lastPollingAttemptString);
 
         if(objectId == null) {
-            ParseQuery<ParseObject> query = ParseQuery.getQuery("PidSettings");
-            query.orderByDescending("createdAt");
-            //query.orderByAscending("createdAtString");
-            Log.i("SetPointFragment", "tempData = query.getFirstInBackground()");
+            pidQuery = ParseQuery.getQuery("PidSettings");
+            pidQuery.setCachePolicy(ParseQuery.CachePolicy.NETWORK_ONLY);
+            pidQuery.orderByDescending("createdAt");
+            //pidQuery.orderByAscending("createdAtString");
+            Log.i("SetPointFragment", "tempData = pidQuery.getFirstInBackground()");
             queryOutstanding = true;
-            query.getFirstInBackground(new GetCallback<ParseObject>() {
+            pidQuery.getFirstInBackground(new GetCallback<ParseObject>() {
                 public void done(ParseObject object, ParseException e) {
                     queryOutstanding = false;
                     if (object == null) {
@@ -272,9 +280,10 @@ public class PidSettingsFragment extends Fragment {
         Log.i("SetPointFragment", "refreshScreen() " + lastPollingAttemptString);
 
         if(objectId != null) {
-            ParseQuery<ParseObject> query = ParseQuery.getQuery("PidSettings");
+            pidQuery = ParseQuery.getQuery("PidSettings");
+            pidQuery.setCachePolicy(ParseQuery.CachePolicy.NETWORK_ONLY);
             queryOutstanding = true;
-            query.getInBackground(objectId, new GetCallback<ParseObject>() {
+            pidQuery.getInBackground(objectId, new GetCallback<ParseObject>() {
                 public void done(ParseObject object, ParseException e) {
                     queryOutstanding = false;
                     if (e == null) {

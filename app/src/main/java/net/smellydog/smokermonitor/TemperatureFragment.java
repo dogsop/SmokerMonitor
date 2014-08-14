@@ -48,11 +48,13 @@ public class TemperatureFragment extends Fragment {
     private Date createdAt;
     private int meatTemperature;
     private int smokerTemperature;
+    private int blowerSetting;
     private String lastPollingAttemptString;
     private String createdAtString;
 
     private TextView meatTempView;
     private TextView smokerTempView;
+    private TextView blowerSettingView;
     private TextView lastUpdateView;
     private TextView timestampView;
 
@@ -63,6 +65,8 @@ public class TemperatureFragment extends Fragment {
     private Timer autoUpdate;
 
     private boolean queryOutstanding;
+    ParseQuery<ParseObject> tempQuery;
+
 
     /**
      * Use this factory method to create a new instance of
@@ -96,7 +100,9 @@ public class TemperatureFragment extends Fragment {
         }
         meatTemperature = 0;
         smokerTemperature = 0;
-        createdAt = new Date();
+        blowerSetting = 0;
+        //createdAt = new Date();
+        createdAt = null;
         createdAtString = "";
         lastPollingAttemptString = "";
     }
@@ -109,11 +115,13 @@ public class TemperatureFragment extends Fragment {
 
         meatTempView = (TextView)v.findViewById(R.id.meatTempView);
         smokerTempView = (TextView)v.findViewById(R.id.smokerTempView);
+        blowerSettingView = (TextView)v.findViewById(R.id.blowerSettingView);
         lastUpdateView = (TextView)v.findViewById(R.id.lastUpdateView);
         timestampView = (TextView)v.findViewById(R.id.timestampView);
 
-        meatTempView.setText(Integer.toString(meatTemperature));
-        smokerTempView.setText(Integer.toString(smokerTemperature));
+        meatTempView.setText(Integer.toString(meatTemperature)+ " \u2109");
+        smokerTempView.setText(Integer.toString(smokerTemperature)+ " \u2109");
+        blowerSettingView.setText(Integer.toString(blowerSetting)+ "%");
         lastUpdateView.setText(lastPollingAttemptString);
         timestampView.setText(createdAtString);
 
@@ -128,12 +136,8 @@ public class TemperatureFragment extends Fragment {
         autoUpdate = new Timer();
         autoUpdate.schedule(new TimerTask() {
             public void run() {
-                if(queryOutstanding == false) {
-                    Log.i("TemperatureFragment", "autoUpdate - calling refreshTemps()");
-                    refreshTemps();
-                } else {
-                    Log.e("TemperatureFragment", "autoUpdate - unable to call refreshTemps(), query pending");
-                }
+                Log.i("TemperatureFragment", "autoUpdate - calling refreshTemps()");
+                refreshTemps();
             }
         }, 200, 20*1000); // updates each 40 secs
     }
@@ -142,6 +146,10 @@ public class TemperatureFragment extends Fragment {
     public void onPause() {
         Log.i("TemperatureFragment", "onPause()");
         autoUpdate.cancel();
+        if(queryOutstanding == true) {
+            tempQuery.cancel();
+            queryOutstanding = false;
+        }
         super.onPause();
     }
 
@@ -157,39 +165,56 @@ public class TemperatureFragment extends Fragment {
         lastPollingAttemptString = currentDateTime.toString();
         Log.i("TemperatureFragment", "refreshTemps() " + lastPollingAttemptString);
 
-        ParseQuery<ParseObject> query = ParseQuery.getQuery("RealTimeTempData");
-        query.orderByDescending("createdAt");
-        //query.orderByAscending("createdAtString");
-        Log.i("TemperatureFragment", "tempData = query.getFirstInBackground()");
-        queryOutstanding = true;
-        query.getFirstInBackground(new GetCallback<ParseObject>() {
-            public void done(ParseObject object, ParseException e) {
-                queryOutstanding = false;
-                if (object == null) {
-                    Log.i("TemperatureFragment", "The getFirst request failed.");
-                } else {
-                    Log.i("TemperatureFragment", "Retrieved the object.");
-                    String objectId = object.getObjectId();
-                    createdAt = object.getCreatedAt();
-                    createdAtString = createdAt.toString();
-                    Log.i("TemperatureFragment", "ObjectId - " + objectId + " createdAt - " + createdAtString);
-                    meatTemperature = object.getInt("MeatTemp");
-                    smokerTemperature = object.getInt("SmokerTemp");
-                    mHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            Log.i("TemperatureFragment", "refreshTemps().findInBackground.run()");
+        if(queryOutstanding == false) {
+            Log.i("TemperatureFragment", "queryOutstanding == false");
+            tempQuery = ParseQuery.getQuery("RealTimeTempData");
+            tempQuery.orderByDescending("createdAt");
+            tempQuery.setCachePolicy(ParseQuery.CachePolicy.NETWORK_ONLY);
+            //tempQuery.orderByAscending("createdAtString");
+            Log.i("TemperatureFragment", "tempData = tempQuery.getFirstInBackground()");
+            queryOutstanding = true;
+            tempQuery.getFirstInBackground(new GetCallback<ParseObject>() {
+                public void done(ParseObject object, ParseException e) {
+                    queryOutstanding = false;
+                    if (e == null) {
+                        if (object == null) {
+                            Log.i("TemperatureFragment", "The getFirst request failed.");
+                            meatTemperature = 0;
+                            smokerTemperature = 0;
+                            blowerSetting = 0;
+                        } else {
+                            Log.i("TemperatureFragment", "Retrieved the object.");
+                            String objectId = object.getObjectId();
+                            createdAt = object.getCreatedAt();
+                            createdAtString = createdAt.toString();
+                            Log.i("TemperatureFragment", "ObjectId - " + objectId + " createdAt - " + createdAtString);
+                            meatTemperature = object.getInt("MeatTemp");
+                            smokerTemperature = object.getInt("SmokerTemp");
+                            blowerSetting = object.getInt("BlowerSetting");
+                            mHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Log.i("TemperatureFragment", "refreshTemps().findInBackground.run()");
 
-                            // Code here will run in UI thread
-                            meatTempView.setText(Integer.toString(meatTemperature)+ " \u2109");
-                            smokerTempView.setText(Integer.toString(smokerTemperature)+ " \u2109");
-                            timestampView.setText(createdAtString);
+                                    // Code here will run in UI thread
+                                    meatTempView.setText(Integer.toString(meatTemperature) + " \u2109");
+                                    smokerTempView.setText(Integer.toString(smokerTemperature) + " \u2109");
+                                    blowerSettingView.setText(Integer.toString(blowerSetting) + "%");
+                                    timestampView.setText(createdAtString);
+                                }
+                            });
                         }
-                    });
+                    } else {
+                        Log.d("refreshTemps", "Error: " + e.getMessage());
+                        meatTemperature = 0;
+                        smokerTemperature = 0;
+                        blowerSetting = 0;
+                    }
                 }
-            }
-        });
-
+            });
+        } else {
+            Log.i("TemperatureFragment", "queryOutstanding == true");
+        }
 
         mHandler.postDelayed(new Runnable() {
             @Override
@@ -199,24 +224,30 @@ public class TemperatureFragment extends Fragment {
                 // Code here will run in UI thread
                 meatTempView.setText(Integer.toString(meatTemperature) + " \u2109");
                 smokerTempView.setText(Integer.toString(smokerTemperature) + " \u2109");
+                blowerSettingView.setText(Integer.toString(blowerSetting)+ "%");
 
                 Calendar c = Calendar.getInstance();
                 int zoneOffset = c.get(java.util.Calendar.ZONE_OFFSET);
                 int dstOffset = c.get(java.util.Calendar.DST_OFFSET);
-                long createdTime = createdAt.getTime();
-                createdTime += (zoneOffset + dstOffset);
+                //long createdTime = createdAt.getTime();
+                //createdTime += (zoneOffset + dstOffset);
                 long currentTime = currentDateTime.getTime();
 
-                // Code here will run in UI thread
-                long diff = currentDateTime.getTime() - createdAt.getTime();
+                if(createdAt != null) {
+                    // Code here will run in UI thread
+                    long diff = currentDateTime.getTime() - createdAt.getTime();
 
-                if (diff > 30000) {
-                    if (diff > 120000) {
-                        meatTempView.setTextColor(Color.RED);
-                        smokerTempView.setTextColor(Color.RED);
+                    if (diff > 30000) {
+                        if (diff > 120000) {
+                            meatTempView.setTextColor(Color.RED);
+                            smokerTempView.setTextColor(Color.RED);
+                        } else {
+                            meatTempView.setTextColor(Color.YELLOW);
+                            smokerTempView.setTextColor(Color.YELLOW);
+                        }
                     } else {
-                        meatTempView.setTextColor(Color.YELLOW);
-                        smokerTempView.setTextColor(Color.YELLOW);
+                        meatTempView.setTextColor(Color.BLACK);
+                        smokerTempView.setTextColor(Color.BLACK);
                     }
                 } else {
                     meatTempView.setTextColor(Color.BLACK);

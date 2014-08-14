@@ -59,6 +59,8 @@ public class SetPointFragment extends Fragment {
     private Timer autoUpdateTimer;
 
     private boolean queryOutstanding;
+    ParseQuery<ParseObject> setPointQuery;
+
     private boolean setPointEditEnabled;
 
     private String objectId;
@@ -130,10 +132,11 @@ public class SetPointFragment extends Fragment {
                         setPointTemperature = Integer.parseInt(setPointEditText.getText().toString());
                         setPointTempView.setText(Integer.toString(setPointTemperature) + " \u2109");
                         if(objectId != null) {
-                            ParseQuery<ParseObject> query = ParseQuery.getQuery("SetPointSettings");
+                            setPointQuery = ParseQuery.getQuery("SetPointSettings");
+                            setPointQuery.setCachePolicy(ParseQuery.CachePolicy.NETWORK_ONLY);
                             // Retrieve the object by id
                             queryOutstanding = true;
-                            query.getInBackground(objectId, new GetCallback<ParseObject>() {
+                            setPointQuery.getInBackground(objectId, new GetCallback<ParseObject>() {
                                 public void done(ParseObject setPointSettings, ParseException e) {
                                     queryOutstanding = false;
                                     if (e == null) {
@@ -157,10 +160,11 @@ public class SetPointFragment extends Fragment {
                 if(queryOutstanding == false) {
                     controllerRunning = toggleControllerButton.isChecked();
                     if(objectId != null) {
-                        ParseQuery<ParseObject> query = ParseQuery.getQuery("SetPointSettings");
+                        setPointQuery = ParseQuery.getQuery("SetPointSettings");
+                        setPointQuery.setCachePolicy(ParseQuery.CachePolicy.NETWORK_ONLY);
                         // Retrieve the object by id
                         queryOutstanding = true;
-                        query.getInBackground(objectId, new GetCallback<ParseObject>() {
+                        setPointQuery.getInBackground(objectId, new GetCallback<ParseObject>() {
                             public void done(ParseObject setPointSettings, ParseException e) {
                                 queryOutstanding = false;
                                 if (e == null) {
@@ -217,6 +221,10 @@ public class SetPointFragment extends Fragment {
     public void onPause() {
         Log.i("SetPointFragment", "onPause()");
         autoUpdateTimer.cancel();
+        if(queryOutstanding == true) {
+            setPointQuery.cancel();
+            queryOutstanding = false;
+        }
         super.onPause();
     }
 
@@ -226,12 +234,13 @@ public class SetPointFragment extends Fragment {
         Log.i("SetPointFragment", "refreshScreen() " + lastPollingAttemptString);
 
         if(objectId == null) {
-            ParseQuery<ParseObject> query = ParseQuery.getQuery("SetPointSettings");
-            query.orderByDescending("createdAt");
-            //query.orderByAscending("createdAtString");
-            Log.i("SetPointFragment", "tempData = query.getFirstInBackground()");
+            setPointQuery = ParseQuery.getQuery("SetPointSettings");
+            setPointQuery.setCachePolicy(ParseQuery.CachePolicy.NETWORK_ONLY);
+            setPointQuery.orderByDescending("createdAt");
+            //setPointQuery.orderByAscending("createdAtString");
+            Log.i("SetPointFragment", "tempData = setPointQuery.getFirstInBackground()");
             queryOutstanding = true;
-            query.getFirstInBackground(new GetCallback<ParseObject>() {
+            setPointQuery.getFirstInBackground(new GetCallback<ParseObject>() {
                 public void done(ParseObject object, ParseException e) {
                     queryOutstanding = false;
                     if (object == null) {
@@ -268,9 +277,10 @@ public class SetPointFragment extends Fragment {
         Log.i("SetPointFragment", "refreshScreen() " + lastPollingAttemptString);
 
         if(objectId != null) {
-            ParseQuery<ParseObject> query = ParseQuery.getQuery("SetPointSettings");
+            setPointQuery = ParseQuery.getQuery("SetPointSettings");
+            setPointQuery.setCachePolicy(ParseQuery.CachePolicy.NETWORK_ONLY);
             queryOutstanding = true;
-            query.getInBackground(objectId, new GetCallback<ParseObject>() {
+            setPointQuery.getInBackground(objectId, new GetCallback<ParseObject>() {
                 public void done(ParseObject object, ParseException e) {
                     queryOutstanding = false;
                     if (e == null) {

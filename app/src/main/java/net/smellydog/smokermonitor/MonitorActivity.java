@@ -6,15 +6,24 @@ import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v13.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+
+import com.parse.FindCallback;
+import com.parse.ParseException;
+import com.parse.ParseObject;
+import com.parse.ParseQuery;
+
+import java.util.List;
 
 
 public class MonitorActivity extends Activity
@@ -95,6 +104,10 @@ implements ActionBar.TabListener,
         if (id == R.id.action_settings) {
             return true;
         }
+        else if (id == R.id.action_erase) {
+            new DeleteOldData().execute("");
+            return true;
+        }
         return super.onOptionsItemSelected(item);
     }
 
@@ -117,6 +130,7 @@ implements ActionBar.TabListener,
     public void onFragmentInteraction(Uri uri) {
 
     }
+
 
     /**
      * A {@link FragmentPagerAdapter} that returns a fragment corresponding to
@@ -214,4 +228,57 @@ implements ActionBar.TabListener,
         }
     }
 
+
+    private class DeleteOldData extends AsyncTask<String, Void, String> {
+        protected String  doInBackground(String... none) {
+            EraseTempData();
+            ErasePidData();
+            return "executed";
+        }
+
+        protected void onProgressUpdate(Void... none) {
+        }
+
+        protected void onPostExecute(String result) {
+        }
+
+        private void EraseTempData() {
+            while(true) {
+                try {
+                    ParseQuery<ParseObject> query = ParseQuery.getQuery("RealTimeTempData");
+                    query.setCachePolicy(ParseQuery.CachePolicy.NETWORK_ONLY);
+                    List<ParseObject> realTimeTempDataList = query.find();
+                    Log.d("score", "Retrieved " + realTimeTempDataList.size() + " temp measurements");
+                    if(realTimeTempDataList.size() == 0) {
+                        return;
+                    } else {
+                        // Accepts a parameter of type: List<ParseObject>
+                        ParseObject.deleteAllInBackground(realTimeTempDataList, null);
+                    }
+                } catch(ParseException e) {
+                    Log.d("EraseTempData", "Error: " + e.getMessage());
+                }
+            }
+        }
+
+        private void ErasePidData() {
+            while(true) {
+                try {
+                    ParseQuery<ParseObject> query = ParseQuery.getQuery("RealTimePidData");
+                    query.setCachePolicy(ParseQuery.CachePolicy.NETWORK_ONLY);
+                    List<ParseObject> realTimePidDataList = query.find();
+                    Log.d("score", "Retrieved " + realTimePidDataList.size() + " pid measurements");
+                    if(realTimePidDataList.size() == 0) {
+                        return;
+                    } else {
+                        // Accepts a parameter of type: List<ParseObject>
+                        ParseObject.deleteAllInBackground(realTimePidDataList, null);
+                    }
+                } catch(ParseException e) {
+                    Log.d("EraseTempData", "Error: " + e.getMessage());
+                }
+            }
+        }
+
+    }
 }
