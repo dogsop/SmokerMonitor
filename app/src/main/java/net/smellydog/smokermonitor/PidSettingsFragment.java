@@ -39,6 +39,8 @@ public class PidSettingsFragment extends Fragment {
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
 
+    private static final String TAG = "PidSettingsFragment";
+
     // TODO: Rename and change types of parameters
     private String mParam1;
     private String mParam2;
@@ -67,9 +69,6 @@ public class PidSettingsFragment extends Fragment {
 
     private Timer autoUpdateTimer;
 
-    private boolean queryOutstanding;
-    ParseQuery<ParseObject> pidQuery;
-
     private boolean setPidSettingsEnabled;
 
     private OnFragmentInteractionListener mListener;
@@ -90,7 +89,6 @@ public class PidSettingsFragment extends Fragment {
         mHandler = new Handler(Looper.getMainLooper());
 
         objectId = null;
-        queryOutstanding = false;
         setPidSettingsEnabled = false;
     }
 
@@ -142,40 +140,36 @@ public class PidSettingsFragment extends Fragment {
                     settingKiEditText.setText(Double.toString(Ki));
                     settingKdEditText.setText(Double.toString(Kd));
                 } else {
-                    if (queryOutstanding == false) {
-                        setPidSettingsEnabled = false;
-                        editPidSettingsButton.setText("Edit PID Settings");
-                        settingKpView.setVisibility(View.VISIBLE);
-                        settingKpEditText.setVisibility(View.GONE);
-                        settingKiView.setVisibility(View.VISIBLE);
-                        settingKiEditText.setVisibility(View.GONE);
-                        settingKdView.setVisibility(View.VISIBLE);
-                        settingKdEditText.setVisibility(View.GONE);
-                        Kp = Double.parseDouble(settingKpEditText.getText().toString());
-                        Ki = Double.parseDouble(settingKiEditText.getText().toString());
-                        Kd = Double.parseDouble(settingKdEditText.getText().toString());
-                        settingKpView.setText(Double.toString(Kp));
-                        settingKiView.setText(Double.toString(Ki));
-                        settingKdView.setText(Double.toString(Kd));
-                        if (objectId != null) {
-                            pidQuery = ParseQuery.getQuery("PidSettings");
-                            pidQuery.setCachePolicy(ParseQuery.CachePolicy.NETWORK_ONLY);
-                            // Retrieve the object by id
-                            queryOutstanding = true;
-                            pidQuery.getInBackground(objectId, new GetCallback<ParseObject>() {
-                                public void done(ParseObject pidSettings, ParseException e) {
-                                    queryOutstanding = false;
-                                    if (e == null) {
-                                        // Now let's update it with some new data. In this case, only controllerRunning
-                                        // will get sent to the Parse Cloud.
-                                        pidSettings.put("Kp", Kp);
-                                        pidSettings.put("Ki", Ki);
-                                        pidSettings.put("Kd", Kd);
-                                        pidSettings.saveInBackground();
-                                    }
+                    setPidSettingsEnabled = false;
+                    editPidSettingsButton.setText("Edit PID Settings");
+                    settingKpView.setVisibility(View.VISIBLE);
+                    settingKpEditText.setVisibility(View.GONE);
+                    settingKiView.setVisibility(View.VISIBLE);
+                    settingKiEditText.setVisibility(View.GONE);
+                    settingKdView.setVisibility(View.VISIBLE);
+                    settingKdEditText.setVisibility(View.GONE);
+                    Kp = Double.parseDouble(settingKpEditText.getText().toString());
+                    Ki = Double.parseDouble(settingKiEditText.getText().toString());
+                    Kd = Double.parseDouble(settingKdEditText.getText().toString());
+                    settingKpView.setText(Double.toString(Kp));
+                    settingKiView.setText(Double.toString(Ki));
+                    settingKdView.setText(Double.toString(Kd));
+                    if (objectId != null) {
+                        ParseQuery<ParseObject> pidQuery = ParseQuery.getQuery("PidSettings");
+                        pidQuery.setCachePolicy(ParseQuery.CachePolicy.NETWORK_ONLY);
+                        // Retrieve the object by id
+                        pidQuery.getInBackground(objectId, new GetCallback<ParseObject>() {
+                            public void done(ParseObject pidSettings, ParseException e) {
+                                if (e == null) {
+                                    // Now let's update it with some new data. In this case, only controllerRunning
+                                    // will get sent to the Parse Cloud.
+                                    pidSettings.put("Kp", Kp);
+                                    pidSettings.put("Ki", Ki);
+                                    pidSettings.put("Kd", Kd);
+                                    pidSettings.saveInBackground();
                                 }
-                            });
-                        }
+                            }
+                        });
                     }
                 }
             }
@@ -187,7 +181,7 @@ public class PidSettingsFragment extends Fragment {
 
     @Override
     public void onResume() {
-        Log.i("SetPointFragment", "onResume()");
+        Log.i(TAG, "onResume()");
         super.onResume();
 
         if(objectId == null) {
@@ -206,68 +200,58 @@ public class PidSettingsFragment extends Fragment {
             settingKdEditText.setVisibility(View.GONE);
         }
 
-        autoUpdateTimer = new Timer();
-        autoUpdateTimer.schedule(new TimerTask() {
-            public void run() {
-                if(queryOutstanding == false) {
-                    Log.i("SetPointFragment", "autoUpdate - calling refreshScreen()");
+        if(autoUpdateTimer == null) {
+            autoUpdateTimer = new Timer();
+            autoUpdateTimer.schedule(new TimerTask() {
+                public void run() {
+                    Log.i(TAG, "autoUpdate - calling refreshScreen()");
                     refreshScreen();
-                } else {
-                    Log.e("SetPointFragment", "autoUpdate - unable to call refreshScreen(), query pending");
                 }
-            }
-        }, 10000, 240 * 1000); // updates each 240 secs
+            }, 11000, 23 * 1000); // updates each 240 secs
+        }
     }
 
     @Override
     public void onPause() {
-        Log.i("SetPointFragment", "onPause()");
-        autoUpdateTimer.cancel();
-        if(queryOutstanding == true) {
-            pidQuery.cancel();
-            queryOutstanding = false;
-        }
+        Log.i(TAG, "onPause()");
+        //autoUpdateTimer.cancel();
         super.onPause();
     }
 
     private void getObjectId() {
         final Date currentDateTime = new Date();
         lastPollingAttemptString = currentDateTime.toString();
-        Log.i("SetPointFragment", "refreshScreen() " + lastPollingAttemptString);
+        Log.i(TAG, "refreshScreen() " + lastPollingAttemptString);
 
         if(objectId == null) {
-            pidQuery = ParseQuery.getQuery("PidSettings");
+            ParseQuery<ParseObject> pidQuery = ParseQuery.getQuery("PidSettings");
             pidQuery.setCachePolicy(ParseQuery.CachePolicy.NETWORK_ONLY);
             pidQuery.orderByDescending("createdAt");
             //pidQuery.orderByAscending("createdAtString");
-            Log.i("SetPointFragment", "tempData = pidQuery.getFirstInBackground()");
-            queryOutstanding = true;
+            Log.i(TAG, "tempData = pidQuery.getFirstInBackground()");
             pidQuery.getFirstInBackground(new GetCallback<ParseObject>() {
                 public void done(ParseObject object, ParseException e) {
-                    queryOutstanding = false;
-                    if (object == null) {
-                        Log.i("SetPointFragment", "The getFirst request failed.");
-                    } else {
-                        Log.i("SetPointFragment", "Retrieved the object.");
-                        objectId = object.getObjectId();
-                        Log.i("SetPointFragment", "ObjectId - " + objectId);
-                        updatedAtString = object.getUpdatedAt().toString();
-                        Kp = object.getDouble("Kp");
-                        Ki = object.getDouble("Ki");
-                        Kd = object.getDouble("Kd");
-                        mHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                Log.i("SetPointFragment", "refreshScreen().findInBackground.run()");
+                    Log.i(TAG, "done called");
+                    if (e == null) {
+                        if (object == null) {
+                            Log.i(TAG, "object == null");
+                        } else {
+                            Log.i(TAG, "Retrieved the object.");
+                            objectId = object.getObjectId();
+                            Log.i(TAG, "ObjectId - " + objectId);
+                            updatedAtString = object.getUpdatedAt().toString();
+                            Kp = object.getDouble("Kp");
+                            Ki = object.getDouble("Ki");
+                            Kd = object.getDouble("Kd");
 
-                                // Code here will run in UI thread
-                                settingKpView.setText(Double.toString(Kp));
-                                settingKiView.setText(Double.toString(Ki));
-                                settingKdView.setText(Double.toString(Kd));
-                                editPidSettingsButton.setEnabled(true);
-                                //timestampView.setText(createdAtString);
-                            }
-                        });
+                            // Code here will run in UI thread
+                            settingKpView.setText(Double.toString(Kp));
+                            settingKiView.setText(Double.toString(Ki));
+                            settingKdView.setText(Double.toString(Kd));
+                            editPidSettingsButton.setEnabled(true);
+                        }
+                    } else {
+                        Log.i(TAG, "Error: " + e.getMessage());
                     }
                 }
             });
@@ -277,34 +261,30 @@ public class PidSettingsFragment extends Fragment {
     private void refreshScreen() {
         final Date currentDateTime = new Date();
         lastPollingAttemptString = currentDateTime.toString();
-        Log.i("SetPointFragment", "refreshScreen() " + lastPollingAttemptString);
+        Log.i(TAG, "refreshScreen() " + lastPollingAttemptString);
 
         if(objectId != null) {
-            pidQuery = ParseQuery.getQuery("PidSettings");
+            ParseQuery<ParseObject> pidQuery = ParseQuery.getQuery("PidSettings");
             pidQuery.setCachePolicy(ParseQuery.CachePolicy.NETWORK_ONLY);
-            queryOutstanding = true;
             pidQuery.getInBackground(objectId, new GetCallback<ParseObject>() {
                 public void done(ParseObject object, ParseException e) {
-                    queryOutstanding = false;
+                    Log.i(TAG, "done called");
                     if (e == null) {
-                        updatedAtString = object.getUpdatedAt().toString();
-                        Kp = object.getDouble("Kp");
-                        Ki = object.getDouble("Ki");
-                        Kd = object.getDouble("Kd");
-                        mHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                Log.i("SetPointFragment", "refreshScreen().findInBackground.run()");
-
-                                // Code here will run in UI thread
-                                settingKpView.setText(Double.toString(Kp));
-                                settingKiView.setText(Double.toString(Ki));
-                                settingKdView.setText(Double.toString(Kd));
-                                editPidSettingsButton.setEnabled(true);
-                            }
-                        });
+                        if (object == null) {
+                            Log.i(TAG, "object == null");
+                        } else {
+                            Log.i(TAG, "Updating the object.");
+                            updatedAtString = object.getUpdatedAt().toString();
+                            Kp = object.getDouble("Kp");
+                            Ki = object.getDouble("Ki");
+                            Kd = object.getDouble("Kd");
+                            settingKpView.setText(Double.toString(Kp));
+                            settingKiView.setText(Double.toString(Ki));
+                            settingKdView.setText(Double.toString(Kd));
+                            editPidSettingsButton.setEnabled(true);
+                        }
                     } else {
-                        Log.i("SetPointFragment", "The getInBackground request failed.");
+                        Log.i(TAG, "The getInBackground request failed.");
                     }
                 }
             });

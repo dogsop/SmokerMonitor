@@ -32,6 +32,8 @@ implements ActionBar.TabListener,
         SetPointFragment.OnFragmentInteractionListener,
         PidSettingsFragment.OnFragmentInteractionListener {
 
+    private static final String TAG = "MonitorActivity";
+
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide
      * fragments for each of the sections. We use a
@@ -138,6 +140,8 @@ implements ActionBar.TabListener,
      */
     public class SectionsPagerAdapter extends FragmentPagerAdapter {
 
+        private static final String TAG = "SectionsPagerAdapter";
+
         public SectionsPagerAdapter(FragmentManager fm) {
             super(fm);
         }
@@ -148,10 +152,13 @@ implements ActionBar.TabListener,
             // Return a PlaceholderFragment (defined as a static inner class below).
             switch(position) {
                 case 0:
+                    Log.i(TAG, "TemperatureFragment.newInstance()");
                     return TemperatureFragment.newInstance();
                 case 2:
+                    Log.i(TAG, "SetPointFragment.newInstance()");
                     return SetPointFragment.newInstance();
                 case 3:
+                    Log.i(TAG, "PidSettingsFragment.newInstance()");
                     return PidSettingsFragment.newInstance();
                 default:
                     return PlaceholderFragment.newInstance(position + 1);
@@ -188,6 +195,8 @@ implements ActionBar.TabListener,
          * The fragment argument representing the section number for this
          * fragment.
          */
+        private static final String TAG = "PlaceholderFragment";
+
         private static final String ARG_SECTION_NUMBER = "section_number";
 
         TextView sectionLabel;
@@ -230,6 +239,9 @@ implements ActionBar.TabListener,
 
 
     private class DeleteOldData extends AsyncTask<String, Void, String> {
+
+        private static final String TAG = "DeleteOldData";
+
         protected String  doInBackground(String... none) {
             EraseTempData();
             ErasePidData();
@@ -248,15 +260,15 @@ implements ActionBar.TabListener,
                     ParseQuery<ParseObject> query = ParseQuery.getQuery("RealTimeTempData");
                     query.setCachePolicy(ParseQuery.CachePolicy.NETWORK_ONLY);
                     List<ParseObject> realTimeTempDataList = query.find();
-                    Log.d("score", "Retrieved " + realTimeTempDataList.size() + " temp measurements");
+                    Log.i(TAG, "Retrieved " + realTimeTempDataList.size() + " temp measurements");
                     if(realTimeTempDataList.size() == 0) {
                         return;
                     } else {
                         // Accepts a parameter of type: List<ParseObject>
-                        ParseObject.deleteAllInBackground(realTimeTempDataList, null);
+                        ParseObject.deleteAll(realTimeTempDataList);
                     }
                 } catch(ParseException e) {
-                    Log.d("EraseTempData", "Error: " + e.getMessage());
+                    Log.i(TAG, "Error: " + e.getMessage());
                 }
             }
         }
@@ -267,15 +279,15 @@ implements ActionBar.TabListener,
                     ParseQuery<ParseObject> query = ParseQuery.getQuery("RealTimePidData");
                     query.setCachePolicy(ParseQuery.CachePolicy.NETWORK_ONLY);
                     List<ParseObject> realTimePidDataList = query.find();
-                    Log.d("score", "Retrieved " + realTimePidDataList.size() + " pid measurements");
+                    Log.i(TAG, "Retrieved " + realTimePidDataList.size() + " pid measurements");
                     if(realTimePidDataList.size() == 0) {
                         return;
                     } else {
                         // Accepts a parameter of type: List<ParseObject>
-                        ParseObject.deleteAllInBackground(realTimePidDataList, null);
+                        ParseObject.deleteAll(realTimePidDataList);
                     }
                 } catch(ParseException e) {
-                    Log.d("EraseTempData", "Error: " + e.getMessage());
+                    Log.i(TAG, "Error: " + e.getMessage());
                 }
             }
         }

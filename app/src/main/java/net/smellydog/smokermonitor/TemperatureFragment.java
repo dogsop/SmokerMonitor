@@ -41,6 +41,8 @@ public class TemperatureFragment extends Fragment {
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
 
+    private static final String TAG = "TemperatureFragment";
+
     // TODO: Rename and change types of parameters
     private String mParam1;
     private String mParam2;
@@ -62,10 +64,7 @@ public class TemperatureFragment extends Fragment {
 
     private OnFragmentInteractionListener mListener;
 
-    private Timer autoUpdate;
-
-    private boolean queryOutstanding;
-    ParseQuery<ParseObject> tempQuery;
+    private Timer autoUpdateTimer;
 
 
     /**
@@ -88,7 +87,6 @@ public class TemperatureFragment extends Fragment {
 
         // Defines a Handler object that's attached to the UI thread
         mHandler = new Handler(Looper.getMainLooper());
-        queryOutstanding = false;
     }
 
     @Override
@@ -130,26 +128,25 @@ public class TemperatureFragment extends Fragment {
 
     @Override
     public void onResume() {
-        Log.i("TemperatureFragment", "onResume()");
+        Log.i(TAG, "onResume()");
         super.onResume();
         //refreshTemps();
-        autoUpdate = new Timer();
-        autoUpdate.schedule(new TimerTask() {
-            public void run() {
-                Log.i("TemperatureFragment", "autoUpdate - calling refreshTemps()");
-                refreshTemps();
-            }
-        }, 200, 20*1000); // updates each 40 secs
+
+        if(autoUpdateTimer == null) {
+            autoUpdateTimer = new Timer();
+            autoUpdateTimer.schedule(new TimerTask() {
+                public void run() {
+                    Log.i(TAG, "autoUpdateTimer - calling refreshTemps()");
+                    refreshTemps();
+                }
+            }, 200, 20 * 1000); // updates each 40 secs
+        }
     }
 
     @Override
     public void onPause() {
-        Log.i("TemperatureFragment", "onPause()");
-        autoUpdate.cancel();
-        if(queryOutstanding == true) {
-            tempQuery.cancel();
-            queryOutstanding = false;
-        }
+        Log.i(TAG, "onPause()");
+        //autoUpdateTimer.cancel();
         super.onPause();
     }
 
@@ -163,68 +160,45 @@ public class TemperatureFragment extends Fragment {
     private void refreshTemps() {
         final Date currentDateTime = new Date();
         lastPollingAttemptString = currentDateTime.toString();
-        Log.i("TemperatureFragment", "refreshTemps() " + lastPollingAttemptString);
+        Log.i(TAG, "refreshTemps() " + lastPollingAttemptString);
 
-        if(queryOutstanding == false) {
-            Log.i("TemperatureFragment", "queryOutstanding == false");
-            tempQuery = ParseQuery.getQuery("RealTimeTempData");
-            tempQuery.orderByDescending("createdAt");
-            tempQuery.setCachePolicy(ParseQuery.CachePolicy.NETWORK_ONLY);
-            //tempQuery.orderByAscending("createdAtString");
-            Log.i("TemperatureFragment", "tempData = tempQuery.getFirstInBackground()");
-            queryOutstanding = true;
-            tempQuery.getFirstInBackground(new GetCallback<ParseObject>() {
-                public void done(ParseObject object, ParseException e) {
-                    queryOutstanding = false;
-                    if (e == null) {
-                        if (object == null) {
-                            Log.i("TemperatureFragment", "The getFirst request failed.");
-                            meatTemperature = 0;
-                            smokerTemperature = 0;
-                            blowerSetting = 0;
-                        } else {
-                            Log.i("TemperatureFragment", "Retrieved the object.");
-                            String objectId = object.getObjectId();
-                            createdAt = object.getCreatedAt();
-                            createdAtString = createdAt.toString();
-                            Log.i("TemperatureFragment", "ObjectId - " + objectId + " createdAt - " + createdAtString);
-                            meatTemperature = object.getInt("MeatTemp");
-                            smokerTemperature = object.getInt("SmokerTemp");
-                            blowerSetting = object.getInt("BlowerSetting");
-                            mHandler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Log.i("TemperatureFragment", "refreshTemps().findInBackground.run()");
-
-                                    // Code here will run in UI thread
-                                    meatTempView.setText(Integer.toString(meatTemperature) + " \u2109");
-                                    smokerTempView.setText(Integer.toString(smokerTemperature) + " \u2109");
-                                    blowerSettingView.setText(Integer.toString(blowerSetting) + "%");
-                                    timestampView.setText(createdAtString);
-                                }
-                            });
-                        }
-                    } else {
-                        Log.d("refreshTemps", "Error: " + e.getMessage());
+        ParseQuery<ParseObject> tempQuery = ParseQuery.getQuery("RealTimeTempData");
+        tempQuery.orderByDescending("createdAt");
+        tempQuery.setCachePolicy(ParseQuery.CachePolicy.NETWORK_ONLY);
+        //tempQuery.orderByAscending("createdAtString");
+        Log.i(TAG, "tempData = tempQuery.getFirstInBackground()");
+        tempQuery.getFirstInBackground(new GetCallback<ParseObject>() {
+            public void done(ParseObject object, ParseException e) {
+                Log.i(TAG, "refreshTemps done called");
+                if (e == null) {
+                    if (object == null) {
+                        Log.i(TAG, "object == null");
                         meatTemperature = 0;
                         smokerTemperature = 0;
                         blowerSetting = 0;
+                        createdAt = null;
+                    } else {
+                        Log.i(TAG, "Retrieved the object.");
+                        String objectId = object.getObjectId();
+                        createdAt = object.getCreatedAt();
+                        createdAtString = createdAt.toString();
+                        Log.i(TAG, "ObjectId - " + objectId + " createdAt - " + createdAtString);
+                        meatTemperature = object.getInt("MeatTemp");
+                        smokerTemperature = object.getInt("SmokerTemp");
+                        blowerSetting = object.getInt("BlowerSetting");
                     }
+                } else {
+                    Log.i("refreshTemps", "Error: " + e.getMessage());
+                    meatTemperature = 0;
+                    smokerTemperature = 0;
+                    blowerSetting = 0;
+                    createdAt = null;
                 }
-            });
-        } else {
-            Log.i("TemperatureFragment", "queryOutstanding == true");
-        }
 
-        mHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                Log.i("TemperatureFragment", "refreshTemps().lastUpdateView.run()");
-
-                // Code here will run in UI thread
                 meatTempView.setText(Integer.toString(meatTemperature) + " \u2109");
                 smokerTempView.setText(Integer.toString(smokerTemperature) + " \u2109");
-                blowerSettingView.setText(Integer.toString(blowerSetting)+ "%");
+                blowerSettingView.setText(Integer.toString(blowerSetting) + "%");
+                timestampView.setText(createdAtString);
 
                 Calendar c = Calendar.getInstance();
                 int zoneOffset = c.get(java.util.Calendar.ZONE_OFFSET);
@@ -255,7 +229,9 @@ public class TemperatureFragment extends Fragment {
                 }
                 lastUpdateView.setText(lastPollingAttemptString);
             }
-        }, 2000);
+        });
+
+
     }
 
     @Override

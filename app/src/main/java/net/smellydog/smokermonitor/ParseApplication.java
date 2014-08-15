@@ -16,6 +16,7 @@ public class ParseApplication extends Application{
 
         // Add your initialization code here
         Parse.initialize(this, "LPO7xM2lmiSxjklrtU2qGRU0ZGYEyismSvUmO55X", "JRuJ8wyQY0ZBFiILdAOULd9GiB7gSf1lSzEz3vKv");
+        Parse.setLogLevel(Parse.LOG_LEVEL_VERBOSE);
 
         ParseUser.enableAutomaticUser();
         ParseACL defaultACL = new ParseACL();

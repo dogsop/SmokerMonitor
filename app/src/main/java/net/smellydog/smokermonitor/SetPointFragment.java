@@ -40,6 +40,9 @@ public class SetPointFragment extends Fragment {
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
 
+    private static final String TAG = "SetPointFragment";
+
+
     // TODO: Rename and change types of parameters
     private String mParam1;
     private String mParam2;
@@ -57,9 +60,6 @@ public class SetPointFragment extends Fragment {
     private Handler mHandler;
 
     private Timer autoUpdateTimer;
-
-    private boolean queryOutstanding;
-    ParseQuery<ParseObject> setPointQuery;
 
     private boolean setPointEditEnabled;
 
@@ -79,6 +79,7 @@ public class SetPointFragment extends Fragment {
         return fragment;
     }
     public SetPointFragment() {
+        Log.i(TAG, "SetPointFragment()");
         // Required empty public constructor
         // Defines a Handler object that's attached to the UI thread
         mHandler = new Handler(Looper.getMainLooper());
@@ -86,12 +87,12 @@ public class SetPointFragment extends Fragment {
         setPointTemperature = 0;
         controllerRunning = false;
         objectId = null;
-        queryOutstanding = false;
         setPointEditEnabled = false;
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        Log.i(TAG, "onCreate()");
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
             mParam1 = getArguments().getString(ARG_PARAM1);
@@ -102,6 +103,7 @@ public class SetPointFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        Log.i(TAG, "onCreateView()");
         // Inflate the layout for this fragment
         View v = inflater.inflate(R.layout.fragment_set_point, container, false);
 
@@ -123,31 +125,27 @@ public class SetPointFragment extends Fragment {
                     setPointEditText.setVisibility(View.VISIBLE);
                     setPointEditText.setText(Integer.toString(setPointTemperature));
                 } else {
-                    if(queryOutstanding == false) {
-                        toggleControllerButton.setEnabled(true);
-                        setPointEditEnabled = false;
-                        editSetPointButton.setText("Edit Set Point");
-                        setPointTempView.setVisibility(View.VISIBLE);
-                        setPointEditText.setVisibility(View.GONE);
-                        setPointTemperature = Integer.parseInt(setPointEditText.getText().toString());
-                        setPointTempView.setText(Integer.toString(setPointTemperature) + " \u2109");
-                        if(objectId != null) {
-                            setPointQuery = ParseQuery.getQuery("SetPointSettings");
-                            setPointQuery.setCachePolicy(ParseQuery.CachePolicy.NETWORK_ONLY);
-                            // Retrieve the object by id
-                            queryOutstanding = true;
-                            setPointQuery.getInBackground(objectId, new GetCallback<ParseObject>() {
-                                public void done(ParseObject setPointSettings, ParseException e) {
-                                    queryOutstanding = false;
-                                    if (e == null) {
-                                        // Now let's update it with some new data. In this case, only controllerRunning
-                                        // will get sent to the Parse Cloud.
-                                        setPointSettings.put("SetPointTemp", setPointTemperature);
-                                        setPointSettings.saveInBackground();
-                                    }
+                    toggleControllerButton.setEnabled(true);
+                    setPointEditEnabled = false;
+                    editSetPointButton.setText("Edit Set Point");
+                    setPointTempView.setVisibility(View.VISIBLE);
+                    setPointEditText.setVisibility(View.GONE);
+                    setPointTemperature = Integer.parseInt(setPointEditText.getText().toString());
+                    setPointTempView.setText(Integer.toString(setPointTemperature) + " \u2109");
+                    if(objectId != null) {
+                        ParseQuery<ParseObject> setPointQuery = ParseQuery.getQuery("SetPointSettings");
+                        setPointQuery.setCachePolicy(ParseQuery.CachePolicy.NETWORK_ONLY);
+                        // Retrieve the object by id
+                        setPointQuery.getInBackground(objectId, new GetCallback<ParseObject>() {
+                            public void done(ParseObject setPointSettings, ParseException e) {
+                                if (e == null) {
+                                    // Now let's update it with some new data. In this case, only controllerRunning
+                                    // will get sent to the Parse Cloud.
+                                    setPointSettings.put("SetPointTemp", setPointTemperature);
+                                    setPointSettings.saveInBackground();
                                 }
-                            });
-                        }
+                            }
+                        });
                     }
                 }
             }
@@ -157,27 +155,21 @@ public class SetPointFragment extends Fragment {
         toggleControllerButton.setEnabled(false);
         toggleControllerButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                if(queryOutstanding == false) {
-                    controllerRunning = toggleControllerButton.isChecked();
-                    if(objectId != null) {
-                        setPointQuery = ParseQuery.getQuery("SetPointSettings");
-                        setPointQuery.setCachePolicy(ParseQuery.CachePolicy.NETWORK_ONLY);
-                        // Retrieve the object by id
-                        queryOutstanding = true;
-                        setPointQuery.getInBackground(objectId, new GetCallback<ParseObject>() {
-                            public void done(ParseObject setPointSettings, ParseException e) {
-                                queryOutstanding = false;
-                                if (e == null) {
-                                    // Now let's update it with some new data. In this case, only controllerRunning
-                                    // will get sent to the Parse Cloud.
-                                    setPointSettings.put("ControllerRunning", controllerRunning);
-                                    setPointSettings.saveInBackground();
-                                }
+                controllerRunning = toggleControllerButton.isChecked();
+                if(objectId != null) {
+                    ParseQuery<ParseObject> setPointQuery = ParseQuery.getQuery("SetPointSettings");
+                    setPointQuery.setCachePolicy(ParseQuery.CachePolicy.NETWORK_ONLY);
+                    // Retrieve the object by id
+                    setPointQuery.getInBackground(objectId, new GetCallback<ParseObject>() {
+                        public void done(ParseObject setPointSettings, ParseException e) {
+                            if (e == null) {
+                                // Now let's update it with some new data. In this case, only controllerRunning
+                                // will get sent to the Parse Cloud.
+                                setPointSettings.put("ControllerRunning", controllerRunning);
+                                setPointSettings.saveInBackground();
                             }
-                        });
-                    }
-                } else {
-                    toggleControllerButton.setChecked(controllerRunning);
+                        }
+                    });
                 }
             }
         });
@@ -189,7 +181,7 @@ public class SetPointFragment extends Fragment {
 
     @Override
     public void onResume() {
-        Log.i("SetPointFragment", "onResume()");
+        Log.i(TAG, "onResume()");
         super.onResume();
 
         if(objectId == null) {
@@ -204,67 +196,56 @@ public class SetPointFragment extends Fragment {
             setPointEditText.setVisibility(View.GONE);
         }
 
-        autoUpdateTimer = new Timer();
-        autoUpdateTimer.schedule(new TimerTask() {
-            public void run() {
-                if(queryOutstanding == false) {
-                    Log.i("SetPointFragment", "autoUpdate - calling refreshScreen()");
+        if(autoUpdateTimer == null) {
+            autoUpdateTimer = new Timer();
+            autoUpdateTimer.schedule(new TimerTask() {
+                public void run() {
+                    Log.i(TAG, "autoUpdate - calling refreshScreen()");
                     refreshScreen();
-                } else {
-                    Log.e("SetPointFragment", "autoUpdate - unable to call refreshScreen(), query pending");
                 }
-            }
-        }, 10000, 60 * 1000); // updates each 60 secs
+            }, 10000, 21 * 1000); // updates each 60 secs
+        }
     }
 
     @Override
     public void onPause() {
-        Log.i("SetPointFragment", "onPause()");
-        autoUpdateTimer.cancel();
-        if(queryOutstanding == true) {
-            setPointQuery.cancel();
-            queryOutstanding = false;
-        }
+        Log.i(TAG, "onPause()");
+        //autoUpdateTimer.cancel();
         super.onPause();
     }
 
     private void getObjectId() {
         final Date currentDateTime = new Date();
         lastPollingAttemptString = currentDateTime.toString();
-        Log.i("SetPointFragment", "refreshScreen() " + lastPollingAttemptString);
+        Log.i(TAG, "refreshScreen() " + lastPollingAttemptString);
 
         if(objectId == null) {
-            setPointQuery = ParseQuery.getQuery("SetPointSettings");
+            ParseQuery<ParseObject> setPointQuery = ParseQuery.getQuery("SetPointSettings");
             setPointQuery.setCachePolicy(ParseQuery.CachePolicy.NETWORK_ONLY);
             setPointQuery.orderByDescending("createdAt");
             //setPointQuery.orderByAscending("createdAtString");
-            Log.i("SetPointFragment", "tempData = setPointQuery.getFirstInBackground()");
-            queryOutstanding = true;
+            Log.i(TAG, "tempData = setPointQuery.getFirstInBackground()");
             setPointQuery.getFirstInBackground(new GetCallback<ParseObject>() {
                 public void done(ParseObject object, ParseException e) {
-                    queryOutstanding = false;
-                    if (object == null) {
-                        Log.i("SetPointFragment", "The getFirst request failed.");
+                    Log.i(TAG, "done called");
+                    if (e == null) {
+                        if (object == null) {
+                            Log.i(TAG, "object == null");
+                        } else {
+                            Log.i(TAG, "Retrieved the object.");
+                            objectId = object.getObjectId();
+                            Log.i(TAG, "ObjectId - " + objectId);
+                            updatedAtString = object.getUpdatedAt().toString();
+                            setPointTemperature = object.getInt("SetPointTemp");
+                            controllerRunning = object.getBoolean("ControllerRunning");
+                            // Code here will run in UI thread
+                            setPointTempView.setText(Integer.toString(setPointTemperature) + " \u2109");
+                            editSetPointButton.setEnabled(true);
+                            toggleControllerButton.setEnabled(true);
+                            toggleControllerButton.setChecked(controllerRunning);
+                        }
                     } else {
-                        Log.i("SetPointFragment", "Retrieved the object.");
-                        objectId = object.getObjectId();
-                        Log.i("SetPointFragment", "ObjectId - " + objectId);
-                        updatedAtString = object.getUpdatedAt().toString();
-                        setPointTemperature = object.getInt("SetPointTemp");
-                        controllerRunning = object.getBoolean("ControllerRunning");
-                        mHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                Log.i("SetPointFragment", "refreshScreen().findInBackground.run()");
-
-                                // Code here will run in UI thread
-                                setPointTempView.setText(Integer.toString(setPointTemperature) + " \u2109");
-                                editSetPointButton.setEnabled(true);
-                                toggleControllerButton.setEnabled(true);
-                                toggleControllerButton.setChecked(controllerRunning);
-                                //timestampView.setText(createdAtString);
-                            }
-                        });
+                        Log.i(TAG, "Error: " + e.getMessage());
                     }
                 }
             });
@@ -274,31 +255,28 @@ public class SetPointFragment extends Fragment {
     private void refreshScreen() {
         final Date currentDateTime = new Date();
         lastPollingAttemptString = currentDateTime.toString();
-        Log.i("SetPointFragment", "refreshScreen() " + lastPollingAttemptString);
+        Log.i(TAG, "refreshScreen() " + lastPollingAttemptString);
 
         if(objectId != null) {
-            setPointQuery = ParseQuery.getQuery("SetPointSettings");
+            ParseQuery<ParseObject> setPointQuery = ParseQuery.getQuery("SetPointSettings");
             setPointQuery.setCachePolicy(ParseQuery.CachePolicy.NETWORK_ONLY);
-            queryOutstanding = true;
             setPointQuery.getInBackground(objectId, new GetCallback<ParseObject>() {
                 public void done(ParseObject object, ParseException e) {
-                    queryOutstanding = false;
+                    Log.i(TAG, "done called");
                     if (e == null) {
-                        updatedAtString = object.getUpdatedAt().toString();
-                        setPointTemperature = object.getInt("SetPointTemp");
-                        controllerRunning = object.getBoolean("ControllerRunning");
-                        mHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                Log.i("SetPointFragment", "refreshScreen().findInBackground.run()");
-
-                                // Code here will run in UI thread
-                                setPointTempView.setText(Integer.toString(setPointTemperature)+ " \u2109");
-                                toggleControllerButton.setChecked(controllerRunning);
-                            }
-                        });
+                        if (object == null) {
+                            Log.i(TAG, "object == null");
+                        } else {
+                            Log.i(TAG, "updating object.");
+                            updatedAtString = object.getUpdatedAt().toString();
+                            setPointTemperature = object.getInt("SetPointTemp");
+                            controllerRunning = object.getBoolean("ControllerRunning");
+                            // Code here will run in UI thread
+                            setPointTempView.setText(Integer.toString(setPointTemperature)+ " \u2109");
+                            toggleControllerButton.setChecked(controllerRunning);
+                        }
                     } else {
-                        Log.i("SetPointFragment", "The getInBackground request failed.");
+                        Log.i(TAG, "Error: " + e.getMessage());
                     }
                 }
             });
